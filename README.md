@@ -8,4 +8,9 @@ This is an open source Mixmax Slash Command.
 
 ## What is the purpose of this extension?
 
-The purpose of Mixmax-donate (used with /donate [charity-name]) is to make suggesting donations in email very easy. 
+The purpose of Mixmax-donate is to make suggesting donations in email very easy. 
+
+## Usage
+```
+/donate [nonprofit]
+```
