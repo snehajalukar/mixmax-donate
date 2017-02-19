@@ -1,0 +1,365 @@
+<!doctype html>
+<html>
+<head>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: -webkit-fit-content;
+      max-width: 100%;
+      opacity: 0;
+      transition: opacity, 80ms ease-in-out;
+    }
+
+    input, select {
+      box-sizing: content-box;
+    }
+
+    .preview-card .apple-only[style] {
+      display: block !important;
+      max-height: none !important;
+      line-height: normal !important;
+      overflow: visible !important;
+      height: auto !important;
+      width: 100% !important;
+      position: relative !important;
+    }
+
+    .preview-card .no-apple {
+      display: none !important;
+    }
+
+    .preview-card .border-outer,
+    .preview-card .border-outer > tbody,
+    .preview-card .border-outer > tbody > tr,
+    .preview-card .border-outer > tbody > tr > td,
+    .preview-card .border-middle,
+    .preview-card .border-middle > tbody,
+    .preview-card .border-middle > tbody > tr,
+    .preview-card .border-middle > tbody > tr > td,
+    .preview-card .border-inner,
+    .preview-card .border-inner > tbody,
+    .preview-card .border-inner > tbody > tr,
+    .preview-card .border-inner > tbody > tr > td,
+    .preview-card .mso-border-inner > .inner,
+    .preview-card .mso-border-inner > .inner > tbody,
+    .preview-card .mso-border-inner > .inner > tbody > tr,
+    .preview-card .mso-border-inner > .inner > tbody > tr > td,
+    .gist,
+    .gist-data,
+    .gist-file,
+    .code-snippet-container {
+      max-width: 100%;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .card-v3 {
+      width: 580px !important;
+      max-width: 100% !important;
+      display: block;
+      box-sizing: border-box;
+    }
+
+    .card-v3 > tbody {
+      display: block;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    .preview-card .mso-inner {
+      display: block;
+    }
+
+    .code-snippet {
+      margin: 10px 0 !important;
+    }
+
+    .apple-mail-form {
+      display: none !important;
+    }
+
+    .innercell {
+      box-sizing: content-box !important;
+    }
+
+    table[width="580"] {
+      width: 100%;
+    }
+
+    .preview-card.event .innercell {
+      position: relative !important;
+    }
+
+    .preview-card.event .innercell,
+    .preview-card.event .innercell > table {
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+
+    .preview-card.event .innercell {
+      box-sizing: border-box !important;
+    }
+
+    .preview-card.event .btn-yes,
+    .preview-card.event .btn-no,
+    .preview-card.event .btn-maybe  {
+      background-color: #eceded;
+      height: 36px;
+      border: 1px solid #cfd2d3;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-decoration: none;
+      line-height: 36px;
+      color: #333;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      font-family: 'proxima-nova', 'Avenir Next', 'Segoe UI', 'Calibri', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    .preview-card.event .btn-yes::before {content: "Yes";}
+    .preview-card.event .btn-no::before {content: "No";}
+    .preview-card.event .btn-maybe::before {content: "Maybe";}
+
+    .preview-card.event .btn-yes img,
+    .preview-card.event .btn-no img,
+    .preview-card.event .btn-maybe img  {
+      display: none !important;
+    }
+  </style>
+
+  <script>
+    // https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md#feature-detection
+    // TODO(jeff): Remove when all users are >= Chrome 51.
+    var supportsPassiveEventListeners = (function() {
+      var supportsPassiveOption = false;
+      try {
+        var opts = Object.defineProperty({}, 'passive', {
+          get: function() {
+            supportsPassiveOption = true;
+          }
+        });
+        window.addEventListener('testingPassiveEventListeners', null, opts);
+      } catch (e) {}
+      return supportsPassiveOption;
+    })();
+
+    function sizeToParent(reason){
+      var doc = document.documentElement;
+
+      // Get the padding of the editor. Must be synced with .editor
+      // in _component.editor.scribe-body.scss. Be sure to add up both
+      // left and right padding for this value.
+      var editorPadding = 20;
+
+      // Calculate the width of the editor
+      var editorWidth = window.parent.document.body.clientWidth - editorPadding;
+
+      // Set the width of the iframe's HTML element to the same as the editor's so that we can
+      // get the "natural" height and width of the iframe.
+      doc.style.width = editorWidth + 'px';
+
+      // Get the natural "width" of the card.
+      var newWidth = document.body.offsetWidth + 'px';
+
+      // Get the natural "height" of the card. Cards can have spacer `div` elements above and below
+      // them, so we need to get the doc height for the correct dimensions here.
+      var newHeight = (doc.scrollHeight > window.innerHeight ? doc.scrollHeight : doc.offsetHeight) + 'px';
+
+      // Ask the editor to resize us rather than doing it ourselves so that it can modify the editor
+      // contents inside a transaction.
+      window.parent.postMessage({
+        method: 'resizeCard',
+        payload: {
+          reason: reason,
+          height: newHeight,
+          width: newWidth
+        }
+      }, '*');
+    }
+
+    function onViewStateChanged(state) {
+      // Register a wheel listener when necessary (see `_onWheelEvent`). For better scroll performance
+      // (https://github.com/WICG/EventListenerOptions/blob/gh-pages/explainer.md#the-problem), we use
+      // passive listeners in Chrome >= 51, and for the benefit of older versions unregister the
+      // listener when not necessary.
+      //
+      // TODO(jeff): Unconditionally register this listener once all users are on Chrome >= 51, since
+      // then we can use passive event listeners all the time.
+      var eventOptions = supportsPassiveEventListeners ? { passive: true } : false /* useCapture */;
+      if (state === 'mixmax-inline-reply') {
+        document.addEventListener('wheel', onWheelEvent, eventOptions);
+      } else {
+        document.removeEventListener('wheel', onWheelEvent, eventOptions);
+      }
+    }
+
+    function onWheelEvent() {
+      window.parent.postMessage({
+        method: 'wheelEvent'
+      }, '*');
+    }
+
+    var sizeTimer;
+
+    var isRunningInFrame = !!window.parent;
+    if (isRunningInFrame){
+      window.addEventListener('DOMContentLoaded', function(){
+        sizeToParent('load' /* reason */);
+
+        // Size every 100ms as the images load.
+        sizeTimer = setInterval(function() {
+          sizeToParent('load' /* reason */);
+        }, 100);
+
+        // All forms and links the iframes that do not have an explicit target attribute
+        // should go to a new window. If you want to open a link in the same window use
+        // target='_self'
+        [].forEach.call(document.querySelectorAll('form:not([target]), a:not([target])'), function(form){
+          form.setAttribute('target', '_blank');
+        });
+      });
+
+      window.addEventListener('load', function(){
+        sizeToParent('load' /* reason */);
+        clearInterval(sizeTimer);
+      });
+
+      // HACK(brad): Don't navigate the window when dropping files. This should
+      // really be handled by the parent editor.
+      document.addEventListener('dragover', function(e){
+        e.preventDefault();
+      });
+      document.addEventListener('drop', function(e){
+        e.preventDefault();
+      });
+
+      document.addEventListener('mouseenter', function(e){
+        window.parent.postMessage({
+          method: 'mouseenter'
+        }, '*');
+      });
+
+      window.addEventListener('message', function(e){
+        var method = e.data.method;
+        var payload = e.data.payload;
+
+        switch (method) {
+          case 'windowResized':
+            sizeToParent('resize' /* reason */);
+            break;
+          case 'viewStateChanged':
+            onViewStateChanged(payload);
+            break;
+        }
+      });
+
+      // Adjust for the initial view state.
+      onViewStateChanged('');
+    }
+  </script>
+</head>
+
+<body style="opacity:1">
+
+<!--[if mso]>
+  <div style="font-size:4px"><br></div>
+<![endif]-->
+<div id="" class="preview-card " style="padding-top:4px;  padding-bottom: 4px;">
+  <table width="580" class="border-outer" 
+border="0" cellpadding="0" cellspacing="0" valign="top" 
+ style="border-collapse:separate; border-radius:4px; border: 1px solid #f5ffff"><tr><td class="mso-border-outer" valign="top" style="border-collapse:collapse; border-radius:4px">
+    <table class="border-middle" 
+border="0" cellpadding="0" cellspacing="0" valign="top" 
+ style="border-collapse:separate; border-radius:3px; border:1px solid #d5ecff"><tr><td class="mso-border-middle" valign="top" style="border-collapse:collapse; border-radius:3px">
+      <table class="border-inner" 
+border="0" cellpadding="0" cellspacing="0" valign="top" 
+ style="border-collapse:separate; border-radius:2px; border:1px solid #99b0e1"><tr><td class="mso-border-inner" valign="top" style="border-collapse:collapse; border-radius:2px">
+        <table class="inner  palm-one-whole" width="574" 
+border="0" cellpadding="0" cellspacing="0" valign="top" style="border-collapse:separate; background-color:white; border-radius:2px"
+><tr><td class="innercell" valign="top" style="position:relative; border-collapse:collapse; padding:10px; ">
+
+            <form method="get" action="<%= url %>" style="padding:0; margin:0; vertical-align:top;">
+    <table cellpadding="0" cellspacing="0" valign="top" width="100%" style="border-collapse:collapse;width:100% !important;">
+      <tr>
+        <td valign="top" width="566" style="min-width:100%;  padding-bottom:10px;  line-height:28px; font-size:20px; font-weight:600; font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+">
+          <%= name %>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top" width="566" style="border-bottom: 1px solid #dde; min-width:100%;  padding-bottom:10px;  line-height:20px;  font-size:14px; font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+">
+          Please fill out the form below to donate to <%= name %>.
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"  style="min-width:100%;  padding-bottom:10px;  padding-top:10px;  line-height:20px;  font-weight:600;  font-size:18px; font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+">
+          Contribution Amount<br>
+          <select style="width:100px;  font-size:18px;" name="entity">
+            <option value="20">$20</option>
+            <option value="50">$50</option>
+            <option value="100">$100</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"  style="min-width:100%;  padding-bottom:10px;  padding-top:10px;  line-height:20px;  font-weight:600;  font-size:18px; font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+">
+          <label style="font-size:16px; padding: 5px;"><input type="radio" name="recurring" value="yes" checked="checked">want to make a one-time contribution</label>
+          <label style="font-size:16px; padding: 5px;"><input type="radio" name="recurring" value="no">I want to contribute this amount every month</label>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top"  style="min-width:100%;  padding-bottom:10px;  padding-top:10px;  line-height:20px;  font-weight:600;  font-size:18px; font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+">
+          Email Address<br>
+          <input style="
+    background: white;
+    font-size: 16px;
+    line-height:24px;
+    font-weight: 600;
+    border: 1px solid #ccd;
+    border-radius: 4px;
+    box-shadow: none;
+
+    /*TODO(brad): File not found?
+    background-image: url('https://app.mixmax.com/blank.gif');*/
+
+    padding: 5px;
+        width: 300px;
+    font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+" name="url">
+
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <button type="submit" value="Submit" style="font-family: 'Avenir Next', 'Segoe UI', 'Calibri', Arial, sans-serif;
+ letter-spacing:2px;  text-transform:uppercase;  text-decoration:none;  border-radius:2px;  font-size:16px;  font-weight:500; display:block; color: white;  background-color: #2C7030;  outline:none;  border:0;  box-shadow: none;  width:100%;  padding:15px 30px;  margin-top: 4px;">Submit</button>
+        </td>
+      </tr>
+    </table>
+  </form>
+
+
+
+        </td></tr></table>
+      </td></tr></table>
+    </td></tr></table>
+  </td></tr></table>
+</div>
+<!--[if mso]>
+  <div style="font-size:4px"><br></div>
+<![endif]-->
+</body>
+
+</html>
