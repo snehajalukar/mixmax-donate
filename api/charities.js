@@ -1,5 +1,13 @@
 var charities = [
     {
+        name: 'Best Friends Animal Society',
+        url: 'http://bestfriends.org/'
+    },
+    {
+        name: 'Cybersmile',
+        url: 'https://www.cybersmile.org/donate'
+    },
+    {
         name: 'Paws Humane Society',
         url: 'www.pawshs.org'
     },
@@ -10,10 +18,6 @@ var charities = [
     {
         name: 'American Society for the Prevention of Cruelty to Animals',
         url: 'https://secure.aspca.org/donate/ps-gn-p2?ms=MP_PMK_Googleawos-T4&initialms=MP_PMK_Googleawos-T4&pcode=WPSE9XXGOGN2PK00034&lpcode=WPSE9XXGOGN1PK00034&gclid=CjwKEAiA_p_FBRCRi_mW5Myl4S0SJAAkezZrFqEPuF9Ss4ExzJR7i04uKiE3MfR_TfKHnPiU5iztOxoCNcjw_wcB'
-    },
-    {
-        name: 'Best Friends Animal Society',
-        url: 'http://bestfriends.org/'
     },
     {
         name: 'Human Rights Campaign',
@@ -34,8 +38,23 @@ var charities = [
     {
         name: 'The UN Refugee Committee',
         url: 'https://donate.unhcr.org/int-en/general/?set_country=INT'
+    },
+    {
+        name: 'Charity Water',
+        url: 'https://donate.charitywater.org/donate/home-variant'
+    },
+    {
+        name: 'Doctors Without Borders',
+        url: 'https://donate.doctorswithoutborders.org/onetime.cfm'
+    },
+    {
+        name: 'The Detroit Water Project',
+        url: 'https://www.detroitwaterproject.org/#donate'
+    },
+    {
+        name: 'The Nature Conservancy',
+        url: 'https://support.nature.org/site/Donation2?df_id=12640&12640.donation=form1&sbid=N01&set.SingleDesignee=13311&src=sea.awp.prnone.crv1&gclid=CjwKEAiA_p_FBRCRi_mW5Myl4S0SJAAkezZrR1SIshDoRWT8prm3zaie1qgtJ3pLRgAlXpk9M9d5AhoC3VTw_wcB'
     }
-    // ... add more there
 ];
 
 function findCharityMatching(searchString) {
