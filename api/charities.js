@@ -9,7 +9,7 @@ var charities = [
     },
     {
         name: 'Paws Humane Society',
-        url: 'www.pawshs.org'
+        url: 'http://www.pawshs.org'
     },
     {
         name: 'Save a Pet',
