@@ -1,15 +1,15 @@
 var charities = [
     {
         name: 'Paws Humane Society',
-        url: 'www.pawshs.org'
+        url: 'http://www.pawshs.org'
     },
     {
         name: 'LGBT Initiative',
-        url: 'www.lgbt-initiative.org'
+        url: 'http://www.lgbt-initiative.org'
     },
     {
         name: 'ACLU',
-        url: 'www.action.aclu.org/donate-aclu?ms=web_horiz_nav_hp'
+        url: 'http://action.aclu.org/donate-aclu?ms=web_horiz_nav_hp'
     }
     // ... add more there
 ];
